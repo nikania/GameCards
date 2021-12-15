@@ -82,7 +82,7 @@ use frame_support::{
             let i = Self::next_card_id();
 
             // Update storage.
-            <CardRegistry<T>>::insert(who, i, card);
+            <CardRegistry<T>>::insert(&who, i, card);
 			<NextCardId<T>>::put(i+1);
 
 			// Emit an event.
