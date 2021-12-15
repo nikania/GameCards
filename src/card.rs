@@ -14,7 +14,7 @@ construct_fixed_hash! {
 }
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Encode, Decode, Clone, Default, RuntimeDebug)]
+#[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq)]
 pub struct Card {
     pub name: Vec<u8>,
     pub card_type: CardType,
@@ -33,7 +33,7 @@ pub const BLUE: Color = 16;
 pub const COLORLESS: Color = 0;
 
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Encode, Decode, Clone, Debug)]
+#[derive(Encode, Decode, Clone, Debug, PartialEq)]
 pub enum CardType {
     Sorcery,
     Instant,
