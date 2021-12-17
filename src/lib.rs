@@ -3,11 +3,15 @@
 pub use pallet::*;
 pub mod card;
 
+#[cfg(test)]
+pub mod mock;
+#[cfg(test)]    
+pub mod tests;
+
 #[frame_support::pallet]
 pub mod pallet {
-    use crate::card::CardUniqueIdentity;
-use crate::card::CardId;
-use crate::card::Card;
+    use crate::card::CardId;
+    use crate::card::Card;
     use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
@@ -42,30 +46,22 @@ use crate::card::Card;
         Blake2_128Concat, CardId,
         Card, OptionQuery
         >;
-    
-    #[pallet::storage]
-    #[pallet::getter(fn unique_identifiers)]
-    pub type CardUniqueRegistry<T: Config> = StorageMap<
-        _,
-        Blake2_128Concat, CardId,
-        Vec<CardUniqueIdentity>, OptionQuery
-        >;
 
     #[pallet::storage]
-    #[pallet::getter(fn albums)]
+    #[pallet::getter(fn owners)]
     pub type CardOwners<T: Config> = StorageDoubleMap<
         _,
         Blake2_128Concat, T::AccountId,
         Blake2_128Concat, CardId,
-        Vec<CardUniqueIdentity>, OptionQuery
+        u16, OptionQuery
         >;
     
     #[pallet::type_value]
-    pub fn DefaultPreviousId() -> u32 { 0 }
+    pub fn DefaultPreviousId() -> CardId { 0 }
 
     #[pallet::storage]
     #[pallet::getter(fn previous_card_id)]
-    pub type PreviousCardId<T: Config> = StorageValue<_, u32, ValueQuery, DefaultPreviousId>;
+    pub type PreviousCardId<T: Config> = StorageValue<_, CardId, ValueQuery, DefaultPreviousId>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -74,8 +70,8 @@ use crate::card::Card;
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. 
-        /// [something, who]
-		CardCreated(u32, T::AccountId),
+        /// [creator, card_id, amount]
+		CardCreated(T::AccountId, CardId, u16),
 	}
 
 	// Errors inform users that something went wrong.
@@ -123,7 +119,7 @@ use crate::card::Card;
         }
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn create(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
+		pub fn create_card_pack(origin: OriginFor<T>, card: Card, amount: u16) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
             ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
             
@@ -132,10 +128,11 @@ use crate::card::Card;
             match nextid {
                 Some(id) => {
                     // Update storage.
-                    // <CardRegistry<T>>::insert(&who, id, card);
-                    // <PreviousCardId<T>>::put(id);
+                    <CardRegistry<T>>::insert(id, card);
+                    <PreviousCardId<T>>::put(id);
+                    <CardOwners<T>>::insert(&who, id, amount);
                     // Emit an event.
-                    Self::deposit_event(Event::CardCreated(i, who));
+                    Self::deposit_event(Event::CardCreated(who, id, amount));
                     // Return a successful DispatchResultWithPostInfo
                     Ok(().into())
                 },
