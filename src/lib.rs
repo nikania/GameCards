@@ -1,18 +1,18 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 pub use pallet::*;
-
 pub mod card;
 
 #[frame_support::pallet]
 pub mod pallet {
-    use crate::card::Card;
+    use crate::card::CardUniqueIdentity;
+use crate::card::CardId;
+use crate::card::Card;
     use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
 	};
 	use frame_system::pallet_prelude::*;
-	use super::*;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
@@ -31,23 +31,41 @@ pub mod pallet {
     #[pallet::storage]
 	#[pallet::getter(fn creators)]
     pub type CreatorRegistry<T: Config> = StorageMap<
-        _, Blake2_128Concat, T::AccountId, (), ValueQuery>;
+        _,
+        Blake2_128Concat, T::AccountId,
+        (), ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn cards)]
-	pub type CardRegistry<T: Config> = StorageDoubleMap<
+	pub type CardRegistry<T: Config> = StorageMap<
         _,
-        Blake2_128Concat, T::AccountId,
-        Blake2_128Concat, u32,
+        Blake2_128Concat, CardId,
         Card, OptionQuery
         >;
     
+    #[pallet::storage]
+    #[pallet::getter(fn unique_identifiers)]
+    pub type CardUniqueRegistry<T: Config> = StorageMap<
+        _,
+        Blake2_128Concat, CardId,
+        Vec<CardUniqueIdentity>, OptionQuery
+        >;
+
+    #[pallet::storage]
+    #[pallet::getter(fn albums)]
+    pub type CardOwners<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat, T::AccountId,
+        Blake2_128Concat, CardId,
+        Vec<CardUniqueIdentity>, OptionQuery
+        >;
+    
     #[pallet::type_value]
-    pub fn DefaultNextId() -> u32 { 0 }
+    pub fn DefaultPreviousId() -> u32 { 0 }
 
     #[pallet::storage]
     #[pallet::getter(fn previous_card_id)]
-    pub type PreviousCardId<T: Config> = StorageValue<_, u32, ValueQuery, DefaultNextId>;
+    pub type PreviousCardId<T: Config> = StorageValue<_, u32, ValueQuery, DefaultPreviousId>;
 
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
@@ -107,14 +125,15 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
+            ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
+            
             let i = Self::previous_card_id();
-
             let nextid = i.checked_add(1);
             match nextid {
                 Some(id) => {
                     // Update storage.
-                    <CardRegistry<T>>::insert(&who, id, card);
-                    <PreviousCardId<T>>::put(id);
+                    // <CardRegistry<T>>::insert(&who, id, card);
+                    // <PreviousCardId<T>>::put(id);
                     // Emit an event.
                     Self::deposit_event(Event::CardCreated(i, who));
                     // Return a successful DispatchResultWithPostInfo

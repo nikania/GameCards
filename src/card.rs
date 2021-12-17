@@ -13,6 +13,9 @@ construct_fixed_hash! {
     pub struct H256(32);
 }
 
+pub type CardId = u32;
+pub type CardUniqueIdentity = H256;
+
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Encode, Decode, Clone, Default, RuntimeDebug, PartialEq)]
 pub struct Card {
