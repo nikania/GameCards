@@ -6,8 +6,8 @@ pub mod card;
 
 #[frame_support::pallet]
 pub mod pallet {
-	use crate::card::Card;
-use frame_support::{
+    use crate::card::Card;
+    use frame_support::{
 		dispatch::DispatchResultWithPostInfo,
 		pallet_prelude::*,
 	};
@@ -27,6 +27,12 @@ use frame_support::{
 
 	// The pallet's runtime storage items.
 	// https://docs.substrate.io/v3/runtime/storage
+
+    #[pallet::storage]
+	#[pallet::getter(fn creators)]
+    pub type CreatorRegistry<T: Config> = StorageMap<
+        _, Blake2_128Concat, T::AccountId, (), ValueQuery>;
+
 	#[pallet::storage]
 	#[pallet::getter(fn cards)]
 	pub type CardRegistry<T: Config> = StorageDoubleMap<
@@ -59,8 +65,14 @@ use frame_support::{
 	pub enum Error<T> {
 		/// Error names should be descriptive.
 		NoneValue,
-		/// Errors should have helpful documentation associated with them.
+		/// Can not store a card
 		IdStorageOverflow, 
+        /// Can not assign to creators
+        NoPermission,
+        /// Account already a creator
+        AccountAlreadyCreator,
+        /// Can not remove from creators - account not one
+        AccountNotCreator,
 	}
 
     #[pallet::hooks]
@@ -71,6 +83,26 @@ use frame_support::{
 	// Dispatchable functions must be annotated with a weight and must return a DispatchResult.
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
+
+        #[pallet::weight(10_000+ T::DbWeight::get().writes(1))]
+        pub fn set_creator(origin: OriginFor<T>, id: T::AccountId) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
+
+            ensure!(!<CreatorRegistry<T>>::contains_key(&id), Error::<T>::AccountAlreadyCreator);
+            <CreatorRegistry<T>>::insert(id, ());
+            Ok(().into())
+        }
+
+        #[pallet::weight(10_000+ T::DbWeight::get().writes(1))]
+        pub fn withdraw_creator(origin: OriginFor<T>, id: T::AccountId) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
+
+            ensure!(<CreatorRegistry<T>>::contains_key(&id), Error::<T>::AccountNotCreator);
+            <CreatorRegistry<T>>::remove(id);
+            Ok(().into())
+        }
 
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
@@ -92,19 +124,19 @@ use frame_support::{
             }	
 		}
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn sell(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
-            Ok(().into())
-        }
+        // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		// pub fn sell(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
+        //     Ok(().into())
+        // }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn transfer(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
-            Ok(().into())
-        }
+        // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		// pub fn transfer(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
+        //     Ok(().into())
+        // }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn show_user_cards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-            Ok(().into())
-        }
+        // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		// pub fn show_user_cards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+        //     Ok(().into())
+        // }
 	}
 }
