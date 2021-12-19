@@ -1,0 +1,19 @@
+{
+    "Card": {
+        "name": "Vec<u8>",
+        "card_type": "CardType",
+        "color": "Color",
+        "rules": "Vec<u8>",
+        "image": "H256"
+    },
+    "Color": "u8",
+    "CardType": {   
+        "_enum": [
+            "Sorcery",
+            "Instant",
+            "Creature",
+            "Aura",
+            "Land"]
+    },
+    "CardId": "u32"
+}
