@@ -3,6 +3,7 @@ use frame_support::{
     sp_runtime::RuntimeDebug,
 };
 use fixed_hash::construct_fixed_hash;
+use sp_std::vec::Vec;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
