@@ -63,6 +63,10 @@ pub mod pallet {
     #[pallet::getter(fn previous_card_id)]
     pub type PreviousCardId<T: Config> = StorageValue<_, CardId, ValueQuery, DefaultPreviousId>;
 
+    // #[pallet::genesis_config]
+	// #[derive(Default)]
+	// pub struct GenesisConfig;
+
 	// Pallets use events to inform users when important changes are made.
 	// https://docs.substrate.io/v3/runtime/events-and-errors
 	#[pallet::event]
@@ -101,7 +105,7 @@ pub mod pallet {
         #[pallet::weight(10_000+ T::DbWeight::get().writes(1))]
         pub fn set_creator(origin: OriginFor<T>, id: T::AccountId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
+           // ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
 
             ensure!(!<CreatorRegistry<T>>::contains_key(&id), Error::<T>::AccountAlreadyCreator);
             <CreatorRegistry<T>>::insert(id, ());
@@ -111,7 +115,7 @@ pub mod pallet {
         #[pallet::weight(10_000+ T::DbWeight::get().writes(1))]
         pub fn withdraw_creator(origin: OriginFor<T>, id: T::AccountId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-            ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
+         //   ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
 
             ensure!(<CreatorRegistry<T>>::contains_key(&id), Error::<T>::AccountNotCreator);
             <CreatorRegistry<T>>::remove(id);
@@ -121,7 +125,7 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create_card_pack(origin: OriginFor<T>, card: Card, amount: u16) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-            ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
+           // ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
             
             let i = Self::previous_card_id();
             let nextid = i.checked_add(1);

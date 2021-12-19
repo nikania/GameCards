@@ -36,24 +36,24 @@ fn creator_creates_card_ok() {
 			image: H256([56u8; 32]),
 		 };
 		// signed account create
-		assert_ok!(TemplateModule::create_card_pack(Origin::signed(1), card, 10));
+		assert_ok!(Cards::create_card_pack(Origin::signed(1), card.clone(), 10));
 		// read from storage
-		let id = TemplateModule::previous_card_id();
-		assert_eq!(TemplateModule::cards(id), card);
+		let id = Cards::previous_card_id();
+		assert_eq!(Cards::cards(id), Some(card));
 	});
 }
 
 #[test]
 fn only_creator_can_create_card_error() {
 	new_test_ext().execute_with(|| {
-		
+		todo!()
 	})
 }
 
 #[test]
 fn cannot_create_card_id_overflow_error() {
 	new_test_ext().execute_with(|| {
-		
+		todo!()
 	})
 }
 
@@ -61,13 +61,14 @@ fn cannot_create_card_id_overflow_error() {
 fn creator_assigns_new_creator_ok() {
 	new_test_ext().execute_with(|| {
 		//assert_ok!(TemplateModule::set_creator(Origin::signed(1), ));
+		todo!()
 	})
 }
 
 #[test]
 fn only_creator_can_assign_crearor_error() {
 	new_test_ext().execute_with(|| {
-		
+		todo!()
 	})
 }
 
@@ -75,27 +76,27 @@ fn only_creator_can_assign_crearor_error() {
 #[test]
 fn creator_withdraws_creator_ok() {
 	new_test_ext().execute_with(|| {
-		
+		todo!()
 	})
 }
 
 #[test]
 fn only_creator_can_withdraw_crearor_error() {
 	new_test_ext().execute_with(|| {
-		
+		todo!()
 	})
 }
 
 #[test]
 fn cannot_withdraw_crearor_non_creator_error() {
 	new_test_ext().execute_with(|| {
-		
+		todo!()
 	})
 }
 
 #[test]
 fn cannot_assign_crearor_already_creator_error() {
 	new_test_ext().execute_with(|| {
-		
+		todo!()
 	})
 }

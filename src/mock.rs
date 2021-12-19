@@ -1,4 +1,4 @@
-use crate as pallet_template;
+use crate as pallet_gamecards;
 use sp_core::H256;
 use frame_support::parameter_types;
 use sp_runtime::{
@@ -17,7 +17,8 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
-		TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
+		//TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
+		Cards: pallet_gamecards::{Module, Call, Storage, Event<T>},
 	}
 );
 
@@ -51,11 +52,43 @@ impl system::Config for Test {
 	type SS58Prefix = SS58Prefix;
 }
 
-impl pallet_template::Config for Test {
+impl pallet_gamecards::Config for Test {
 	type Event = Event;
 }
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	system::GenesisConfig::default().build_storage::<Test>().unwrap().into()
+	//let mut t = 
+	frame_system::GenesisConfig::default()
+		.build_storage::<Test>()
+		.unwrap().into()
+
+	// 	pallet_gamecards::GenesisConfig::<Test> {
+	// 	// Provide some initial balances
+	// 	balances: ROLES.iter().map(|x| (x.0, 100000)).collect(),
+	// }
+	// .assimilate_storage(&mut t)
+	// .unwrap();
+
+	// super::GenesisConfig::<TestRuntime> {
+	// 	// Accounts for tests
+	// 	genesis_account_registry: ROLES
+	// 		.iter()
+	// 		.map(|(acc, role)| {
+	// 			(
+	// 				*acc,
+	// 				AccountStruct {
+	// 					roles: *role
+	// 				},
+	// 			)
+	// 		})
+	// 		.collect(),
+	// }
+	// .assimilate_storage(&mut t)
+	// .unwrap();
+
+	// // t.into()
+	// let mut ext = sp_io::TestExternalities::new(t);
+	// ext.execute_with(|| System::set_block_number(1));
+	// ext
 }
