@@ -31,7 +31,7 @@ fn creator_creates_card_ok() {
 		let card = Card { 
 			name: vec!(1,4,45,3,2),
 			card_type: CardType::Creature,
-			color: RED,
+			color: RED&BLACK,
 			rules: vec!(1,4,45,3,2),
 			image: H256([56u8; 32]),
 		 };

@@ -74,8 +74,13 @@ pub mod pallet {
 	pub enum Event<T: Config> {
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. 
-        /// [creator, card_id, amount]
+        /// \[creator, card_id, amount\]
 		CardCreated(T::AccountId, CardId, u16),
+
+        /// \[assigner, new creator\]
+        CreatorAssigned(T::AccountId, T::AccountId),
+        /// \[assigner, not a creator anymore\]
+        CreatorWithdrawn(T::AccountId, T::AccountId)
 	}
 
 	// Errors inform users that something went wrong.
@@ -105,20 +110,22 @@ pub mod pallet {
         #[pallet::weight(10_000+ T::DbWeight::get().writes(1))]
         pub fn set_creator(origin: OriginFor<T>, id: T::AccountId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-           // ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
+            ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
 
             ensure!(!<CreatorRegistry<T>>::contains_key(&id), Error::<T>::AccountAlreadyCreator);
-            <CreatorRegistry<T>>::insert(id, ());
+            <CreatorRegistry<T>>::insert(&id, ());
+            Self::deposit_event(Event::CreatorAssigned(who, id));
             Ok(().into())
         }
 
         #[pallet::weight(10_000+ T::DbWeight::get().writes(1))]
         pub fn withdraw_creator(origin: OriginFor<T>, id: T::AccountId) -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
-         //   ensure!(<CreatorRegistry<T>>::contains_key(who), Error::<T>::NoPermission);
+            ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
 
             ensure!(<CreatorRegistry<T>>::contains_key(&id), Error::<T>::AccountNotCreator);
-            <CreatorRegistry<T>>::remove(id);
+            <CreatorRegistry<T>>::remove(&id);
+            Self::deposit_event(Event::CreatorWithdrawn(who, id));
             Ok(().into())
         }
 
@@ -144,10 +151,12 @@ pub mod pallet {
             }	
 		}
 
-        // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		// pub fn sell(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
-        //     Ok(().into())
-        // }
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn sell(origin: OriginFor<T>, card: Card, amount: u16, account: T::AccountId)   
+            ->  DispatchResultWithPostInfo {
+            
+            Ok(().into())
+        }
 
         // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		// pub fn transfer(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {

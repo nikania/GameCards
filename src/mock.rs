@@ -58,10 +58,13 @@ impl pallet_gamecards::Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	//let mut t = 
-	frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
-		.unwrap().into()
+	let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
+		.build_storage::<Test>().unwrap().into();
+	t.execute_with(|| System::set_block_number(1) );
+	t
+	// frame_system::GenesisConfig::default()
+	// 	.build_storage::<Test>()
+	// 	.unwrap().into()
 
 	// 	pallet_gamecards::GenesisConfig::<Test> {
 	// 	// Provide some initial balances
