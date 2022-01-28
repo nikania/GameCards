@@ -76,7 +76,8 @@ pub mod pallet {
 		/// parameters. 
         /// \[creator, card_id, amount\]
 		CardCreated(T::AccountId, CardId, u16),
-
+        /// \[old owner, card_id, new owner\]
+        CardTransferred(T::AccountId, CardId, T::AccountId),
         /// \[assigner, new creator\]
         CreatorAssigned(T::AccountId, T::AccountId),
         /// \[assigner, not a creator anymore\]
@@ -154,9 +155,10 @@ pub mod pallet {
 		}
 
         // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		// pub fn sell(origin: OriginFor<T>, card: Card, amount: u16, account: T::AccountId)   
+		// pub fn sell(origin: OriginFor<T>, card_id: CardId, amount: u16, account: T::AccountId)   
         //     ->  DispatchResultWithPostInfo {
-            
+        //         let who = ensure_signed(origin)?;
+
         //     Ok(().into())
         // }
 
@@ -181,7 +183,7 @@ pub mod pallet {
                         Ok(amount) => <CardOwners<T>>::insert(&account, card_id, amount+1),
                         _ => <CardOwners<T>>::insert(&account, card_id, 1),
                     }
-                    
+                    Self::deposit_event(Event::CardTransferred(who, card_id, account));
                     Ok(().into())
                 }
                 _ => Err(Error::<T>::CardNotOwned)?
@@ -192,5 +194,48 @@ pub mod pallet {
 		// pub fn show_user_cards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
         //     Ok(().into())
         // }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn test_insert(origin: OriginFor<T>, num: u16) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            <CardOwners<T>>::insert(who, 1, num);
+            if num%2 ==0 {
+                Err(Error::<T>::NoneValue)?
+            } else {
+                Ok(().into())
+            }
+        
+        }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn test_mutate(origin: OriginFor<T>, num: u16) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            <CardOwners<T>>::mutate(who, 1, |val| {
+                *val = Some(num)
+            });
+
+            if num%2 ==0 {
+                Err(Error::<T>::NoneValue)?
+            } else {
+                Ok(().into())
+            }
+        }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn test_try_mutate(origin: OriginFor<T>, num: u16) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            <CardOwners<T>>::try_mutate( who, 1, |val| 
+                -> DispatchResultWithPostInfo {
+                *val = Some(num);
+                if num%2 ==0 {
+                    Err(Error::<T>::NoneValue)?
+                } else {
+                    Ok(().into())
+                }
+            });
+            Ok(().into())
+        }
 	}
 }
