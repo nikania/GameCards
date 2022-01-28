@@ -96,6 +96,8 @@ pub mod pallet {
         AccountAlreadyCreator,
         /// Can not remove from creators - account not one
         AccountNotCreator,
+        /// Card not owned
+        CardNotOwned,
 	}
 
     #[pallet::hooks]
@@ -151,17 +153,40 @@ pub mod pallet {
             }	
 		}
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn sell(origin: OriginFor<T>, card: Card, amount: u16, account: T::AccountId)   
-            ->  DispatchResultWithPostInfo {
-            
-            Ok(().into())
-        }
-
         // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		// pub fn transfer(origin: OriginFor<T>, card: Card) -> DispatchResultWithPostInfo {
+		// pub fn sell(origin: OriginFor<T>, card: Card, amount: u16, account: T::AccountId)   
+        //     ->  DispatchResultWithPostInfo {
+            
         //     Ok(().into())
         // }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn transfer(origin: OriginFor<T>, card_id: CardId, account: T::AccountId)
+             -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            match <CardOwners<T>>::try_get(&who, &card_id) {
+                Ok(owned) => {
+                    if owned < 1 {
+                        <CardOwners<T>>::remove(&who, card_id);
+                        Err(Error::<T>::CardNotOwned)?
+                    }
+                    else if owned == 1 {
+                        <CardOwners<T>>::remove(&who, card_id)
+                    } else {
+                        <CardOwners<T>>::insert(&who, card_id, owned-1)
+                    }
+
+                    match <CardOwners<T>>::try_get(&account, card_id) {
+                        Ok(amount) => <CardOwners<T>>::insert(&account, card_id, amount+1),
+                        _ => <CardOwners<T>>::insert(&account, card_id, 1),
+                    }
+                    
+                    Ok(().into())
+                }
+                _ => Err(Error::<T>::CardNotOwned)?
+            }
+        }
 
         // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		// pub fn show_user_cards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {

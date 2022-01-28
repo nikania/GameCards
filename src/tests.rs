@@ -43,6 +43,19 @@ fn creator_creates_card_ok() {
 	});
 }
 
+fn create_card_pack(creator: Origin) -> u32 {
+	let card = Card { 
+		name: vec!(1,4,45,3,2),
+		card_type: CardType::Creature,
+		color: RED&BLACK,
+		rules: vec!(1,4,45,3,2),
+		image: H256([56u8; 32]),
+	 };
+	// signed account create
+	assert_ok!(Cards::create_card_pack(creator, card.clone(), 10));
+	Cards::previous_card_id()
+}
+
 #[test]
 fn only_creator_can_create_card_error() {
 	new_test_ext().execute_with(|| {
@@ -98,5 +111,17 @@ fn cannot_withdraw_crearor_non_creator_error() {
 fn cannot_assign_crearor_already_creator_error() {
 	new_test_ext().execute_with(|| {
 		todo!()
+	})
+}
+
+#[test]
+fn transfer_card_ok() {
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(1);
+		let user  = 2u64;
+		let card_id = create_card_pack(creator.clone());
+		let _ = Cards::transfer(creator, card_id, user);
+
+		assert_eq!(Cards::owners(2, card_id), Some(1));
 	})
 }
