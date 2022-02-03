@@ -72,8 +72,6 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Event documentation should end with an array that provides descriptive names for event
-		/// parameters. 
         /// \[creator, card_id, amount\]
 		CardCreated(T::AccountId, CardId, u16),
         /// \[old owner, card_id, new owner\]
@@ -195,47 +193,5 @@ pub mod pallet {
         //     Ok(().into())
         // }
 
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn test_insert(origin: OriginFor<T>, num: u16) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-
-            <CardOwners<T>>::insert(who, 1, num);
-            if num%2 ==0 {
-                Err(Error::<T>::NoneValue)?
-            } else {
-                Ok(().into())
-            }
-        
-        }
-
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn test_mutate(origin: OriginFor<T>, num: u16) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            <CardOwners<T>>::mutate(who, 1, |val| {
-                *val = Some(num)
-            });
-
-            if num%2 ==0 {
-                Err(Error::<T>::NoneValue)?
-            } else {
-                Ok(().into())
-            }
-        }
-
-        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn test_try_mutate(origin: OriginFor<T>, num: u16) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-
-            <CardOwners<T>>::try_mutate( who, 1, |val| 
-                -> DispatchResultWithPostInfo {
-                *val = Some(num);
-                if num%2 ==0 {
-                    Err(Error::<T>::NoneValue)?
-                } else {
-                    Ok(().into())
-                }
-            });
-            Ok(().into())
-        }
 	}
 }
