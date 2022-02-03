@@ -43,6 +43,7 @@ fn creator_creates_card_ok() {
 	});
 }
 
+/// creates 10 cards
 fn create_card_pack(creator: Origin) -> u32 {
 	let card = Card { 
 		name: vec!(1,4,45,3,2),
@@ -123,5 +124,20 @@ fn transfer_card_ok() {
 		let _ = Cards::transfer(creator, card_id, user);
 
 		assert_eq!(Cards::owners(2, card_id), Some(1));
+	})
+}
+
+#[test]
+fn transfer_card_not_owned_error() {
+	new_test_ext().execute_with(|| {
+		let creator1 = Origin::signed(1);
+		let creator2 = Origin::signed(2);
+		let user  = 3u64;
+		let card_id = create_card_pack(creator1.clone());
+		assert_noop!(Cards::transfer(creator2, card_id, user), Error::<Test>::CardNotOwned) ;
+
+		assert_eq!(Cards::owners(1, card_id), Some(10));
+		assert_eq!(Cards::owners(2, card_id), None);
+		assert_eq!(Cards::owners(3, card_id), None);
 	})
 }

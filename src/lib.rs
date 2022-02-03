@@ -7,6 +7,8 @@ pub mod card;
 pub mod mock;
 #[cfg(test)]    
 pub mod tests;
+#[cfg(test)] 
+mod test_encode;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -133,7 +135,7 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn create_card_pack(origin: OriginFor<T>, card: Card, amount: u16) -> DispatchResultWithPostInfo {
 			let who = ensure_signed(origin)?;
-           // ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
+            ensure!(<CreatorRegistry<T>>::contains_key(&who), Error::<T>::NoPermission);
             
             let i = Self::previous_card_id();
             let nextid = i.checked_add(1);
@@ -165,27 +167,53 @@ pub mod pallet {
              -> DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
 
-            match <CardOwners<T>>::try_get(&who, &card_id) {
-                Ok(owned) => {
-                    if owned < 1 {
-                        <CardOwners<T>>::remove(&who, card_id);
+            <CardOwners<T>>::try_mutate_exists(who.clone(), card_id, |amount| {
+                match amount {
+                    Some(owner_amount) => {
+                        if owner_amount == &1u16 {
+                            amount.take();
+                        } else {
+                            let new_amount = owner_amount.checked_sub(1);
+                            if let Some(a) = new_amount {
+                                *amount = Some(a);
+                            } else {
+                                Err(Error::<T>::CardNotOwned)?
+                            }
+                        }
+
+                        match <CardOwners<T>>::try_get(&account, card_id) {
+                            Ok(amount) => <CardOwners<T>>::insert(&account, card_id, amount+1),
+                            _ => <CardOwners<T>>::insert(&account, card_id, 1),
+                        }
+                        Self::deposit_event(Event::CardTransferred(who, card_id, account));
+                        Ok(().into())
+                    },
+                    None => {
                         Err(Error::<T>::CardNotOwned)?
                     }
-                    else if owned == 1 {
-                        <CardOwners<T>>::remove(&who, card_id)
-                    } else {
-                        <CardOwners<T>>::insert(&who, card_id, owned-1)
-                    }
-
-                    match <CardOwners<T>>::try_get(&account, card_id) {
-                        Ok(amount) => <CardOwners<T>>::insert(&account, card_id, amount+1),
-                        _ => <CardOwners<T>>::insert(&account, card_id, 1),
-                    }
-                    Self::deposit_event(Event::CardTransferred(who, card_id, account));
-                    Ok(().into())
                 }
-                _ => Err(Error::<T>::CardNotOwned)?
-            }
+            })
+            // match <CardOwners<T>>::try_get(&who, &card_id) {
+            //     Ok(owned) => {
+            //         if owned < 1 {
+            //             <CardOwners<T>>::remove(&who, card_id);
+            //             Err(Error::<T>::CardNotOwned)?
+            //         }
+            //         else if owned == 1 {
+            //             <CardOwners<T>>::remove(&who, card_id)
+            //         } else {
+            //             <CardOwners<T>>::insert(&who, card_id, owned-1)
+            //         }
+
+            //         match <CardOwners<T>>::try_get(&account, card_id) {
+            //             Ok(amount) => <CardOwners<T>>::insert(&account, card_id, amount+1),
+            //             _ => <CardOwners<T>>::insert(&account, card_id, 1),
+            //         }
+            //         Self::deposit_event(Event::CardTransferred(who, card_id, account));
+            //         Ok(().into())
+            //     }
+            //     _ => Err(Error::<T>::CardNotOwned)?
+            // }
         }
 
         // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
