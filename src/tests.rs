@@ -36,7 +36,7 @@ fn creator_creates_card_ok() {
 			image: H256([56u8; 32]),
 		 };
 		// signed account create
-		assert_ok!(Cards::create_card_pack(Origin::signed(1), card.clone(), 10));
+		assert_ok!(Cards::create_card_pack(Origin::signed(ALICE), card.clone(), 10));
 		// read from storage
 		let id = Cards::previous_card_id();
 		assert_eq!(Cards::cards(id), Some(card));
@@ -118,7 +118,7 @@ fn cannot_assign_crearor_already_creator_error() {
 #[test]
 fn transfer_card_ok() {
 	new_test_ext().execute_with(|| {
-		let creator = Origin::signed(1);
+		let creator = Origin::signed(ALICE);
 		let user  = 2u64;
 		let card_id = create_card_pack(creator.clone());
 		let _ = Cards::transfer(creator, card_id, user);
@@ -130,7 +130,7 @@ fn transfer_card_ok() {
 #[test]
 fn transfer_card_not_owned_error() {
 	new_test_ext().execute_with(|| {
-		let creator1 = Origin::signed(1);
+		let creator1 = Origin::signed(ALICE);
 		let creator2 = Origin::signed(2);
 		let user  = 3u64;
 		let card_id = create_card_pack(creator1.clone());

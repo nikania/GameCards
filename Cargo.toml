@@ -24,6 +24,7 @@ pallet-timestamp = { default-features = false, version = '3.0.0' }
 sp-api = { default-features = false, version = '3.0.0' }
 sp-std = { version = "3.0.0", default-features = false }
 sp-runtime = { version = "3.0.0", default-features = false }
+pallet-balances = { version = "3.0.0", default-features = false }
 
 [dev-dependencies]
 sp-core = {  version = '3.0.0' }
