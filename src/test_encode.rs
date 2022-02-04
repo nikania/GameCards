@@ -67,6 +67,11 @@ fn test_codec() {
 	assert_encode(vec![1u32, 2u32], b"\x08\x01\0\0\0\x02\0\0\0");
 }
 
+#[test]
+fn test_unit_encoding() {
+    assert_encode((), b"")
+}
+
 // compact encoding:
 // 0b00 00 00 00 / 00 00 00 00 / 00 00 00 00 / 00 00 00 00
 //   xx xx xx 00															(0 .. 2**6)		(u8)

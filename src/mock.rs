@@ -1,4 +1,3 @@
-//use crate as pallet_gamecards;
 use super::*;
 
 use sp_core::H256;
@@ -7,7 +6,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup}, testing::Header,
 };
 use frame_system as system;
-//use frame_system::GenesisConfig;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -75,6 +73,8 @@ impl pallet::Config for Test {
 
 pub type AccountId = u64;
 pub const ALICE: AccountId = 1;
+pub const BOB: AccountId = 2;
+pub const MIRA: AccountId = 3;
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -92,44 +92,3 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	t.execute_with(|| System::set_block_number(1) );
 	t
 }
-
-
-// // Build genesis storage according to the mock runtime.
-// pub fn new_test_ext() -> sp_io::TestExternalities {
-// 	let mut t: sp_io::TestExternalities = frame_system::GenesisConfig::default()
-// 		.build_storage::<Test>().unwrap().into();
-// 	t.execute_with(|| System::set_block_number(1) );
-// 	t
-// 	// frame_system::GenesisConfig::default()
-// 	// 	.build_storage::<Test>()
-// 	// 	.unwrap().into()
-
-// 	// 	pallet_gamecards::GenesisConfig::<Test> {
-// 	// 	// Provide some initial balances
-// 	// 	balances: ROLES.iter().map(|x| (x.0, 100000)).collect(),
-// 	// }
-// 	// .assimilate_storage(&mut t)
-// 	// .unwrap();
-
-// 	// super::GenesisConfig::<TestRuntime> {
-// 	// 	// Accounts for tests
-// 	// 	genesis_account_registry: ROLES
-// 	// 		.iter()
-// 	// 		.map(|(acc, role)| {
-// 	// 			(
-// 	// 				*acc,
-// 	// 				AccountStruct {
-// 	// 					roles: *role
-// 	// 				},
-// 	// 			)
-// 	// 		})
-// 	// 		.collect(),
-// 	// }
-// 	// .assimilate_storage(&mut t)
-// 	// .unwrap();
-
-// 	// // t.into()
-// 	// let mut ext = sp_io::TestExternalities::new(t);
-// 	// ext.execute_with(|| System::set_block_number(1));
-// 	// ext
-// }

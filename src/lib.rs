@@ -40,6 +40,11 @@ pub mod pallet {
         _,
         Blake2_128Concat, T::AccountId,
         (), ValueQuery>;
+    
+    #[cfg(test)]
+    pub fn is_creator<T: Config>(acc: T::AccountId) -> bool {
+        <CreatorRegistry<T>>::contains_key(&acc)
+    }
 
 	#[pallet::storage]
 	#[pallet::getter(fn cards)]
@@ -123,7 +128,7 @@ pub mod pallet {
 		NoneValue,
 		/// Can not store a card
 		IdStorageOverflow, 
-        /// Can not assign to creators
+        /// Account have no permission for operation
         NoPermission,
         /// Account already a creator
         AccountAlreadyCreator,
