@@ -18,7 +18,6 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
-		//TemplateModule: pallet_template::{Module, Call, Storage, Event<T>},
 	//	Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
 		Cards: pallet::{Module, Call, Storage, Event<T>},
 	}
