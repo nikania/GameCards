@@ -19,10 +19,12 @@ pub mod pallet {
 		pallet_prelude::*,
 	};
 	use frame_system::pallet_prelude::*;
+	use pallet_balances;
+    use sp_runtime::traits::StaticLookup;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
-	pub trait Config: frame_system::Config {
+	pub trait Config: frame_system::Config + pallet_balances::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 	}
@@ -61,6 +63,15 @@ pub mod pallet {
         Blake2_128Concat, T::AccountId,
         Blake2_128Concat, CardId,
         u16, OptionQuery
+        >;
+
+    #[pallet::storage]
+    #[pallet::getter(fn cards_for_sale)]
+    pub type CardsForSale<T: Config> = StorageDoubleMap<
+        _,
+        Blake2_128Concat, CardId,
+        Blake2_128Concat, T::AccountId,
+        T::Balance, OptionQuery
         >;
     
     #[pallet::type_value]
@@ -118,7 +129,9 @@ pub mod pallet {
         /// \[assigner, new creator\]
         CreatorAssigned(T::AccountId, T::AccountId),
         /// \[assigner, not a creator anymore\]
-        CreatorWithdrawn(T::AccountId, T::AccountId)
+        CreatorWithdrawn(T::AccountId, T::AccountId),
+        /// \[card_id, owner, price\]
+        CardSetForSale(CardId, T::AccountId, T::Balance),
 	}
 
 	// Errors inform users that something went wrong.
@@ -136,6 +149,8 @@ pub mod pallet {
         AccountNotCreator,
         /// Card not owned
         CardNotOwned,
+        /// Not for sale
+        CardNotForSale,
 	}
 
     #[pallet::hooks]
@@ -188,13 +203,54 @@ pub mod pallet {
             }	
 		}
 
-        // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		// pub fn sell(origin: OriginFor<T>, card_id: CardId, amount: u16, account: T::AccountId)   
-        //     ->  DispatchResultWithPostInfo {
-        //         let who = ensure_signed(origin)?;
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn set_card_for_sale_with_price(origin: OriginFor<T>, card_id: CardId, price: T::Balance) 
+            ->  DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            ensure!(<CardOwners<T>>::contains_key(&who, card_id), Error::<T>::CardNotOwned);
 
-        //     Ok(().into())
-        // }
+            <CardsForSale<T>>::insert(card_id, &who, price);
+
+            Self::deposit_event(Event::CardSetForSale(card_id, who, price));
+            Ok(().into())
+        }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn buy(origin: OriginFor<T>, card_id: CardId, card_owner: T::AccountId)   
+            ->  DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+
+            <CardsForSale<T>>::try_mutate_exists(card_id, &card_owner, |price| {
+                ensure!(<CardOwners<T>>::contains_key(&card_owner, card_id), Error::<T>::CardNotOwned);
+                ensure!(<CardsForSale<T>>::contains_key(card_id, &card_owner), Error::<T>::CardNotForSale);
+
+                let price = price.take().unwrap();
+                <CardOwners<T>>::try_mutate_exists(card_owner.clone(), card_id, |amount| {
+                    pallet_balances::Call::<T>::transfer(
+                        <T::Lookup as StaticLookup>::unlookup(card_owner.clone()), price);
+                    match amount { 
+                        Some(owner_amount) => {
+                            let new_amount = owner_amount.checked_sub(1);
+                            if let Some(a) = new_amount {
+                                *amount = Some(a);
+                            } else {
+                                Err(Error::<T>::CardNotOwned)?
+                            }
+
+                            match <CardOwners<T>>::try_get(&who, card_id) {
+                                Ok(amount) => <CardOwners<T>>::insert(&who, card_id, amount+1),
+                                _ => <CardOwners<T>>::insert(&who, card_id, 1),
+                            }
+                            Self::deposit_event(Event::CardTransferred(card_owner.clone(), card_id, who));
+                            Ok(().into())
+                        },
+                        None => {
+                            Err(Error::<T>::CardNotOwned)?
+                        }
+                    }
+                })
+            })
+        }
 
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn transfer(origin: OriginFor<T>, card_id: CardId, account: T::AccountId)
@@ -227,33 +283,13 @@ pub mod pallet {
                     }
                 }
             })
-            // match <CardOwners<T>>::try_get(&who, &card_id) {
-            //     Ok(owned) => {
-            //         if owned < 1 {
-            //             <CardOwners<T>>::remove(&who, card_id);
-            //             Err(Error::<T>::CardNotOwned)?
-            //         }
-            //         else if owned == 1 {
-            //             <CardOwners<T>>::remove(&who, card_id)
-            //         } else {
-            //             <CardOwners<T>>::insert(&who, card_id, owned-1)
-            //         }
-
-            //         match <CardOwners<T>>::try_get(&account, card_id) {
-            //             Ok(amount) => <CardOwners<T>>::insert(&account, card_id, amount+1),
-            //             _ => <CardOwners<T>>::insert(&account, card_id, 1),
-            //         }
-            //         Self::deposit_event(Event::CardTransferred(who, card_id, account));
-            //         Ok(().into())
-            //     }
-            //     _ => Err(Error::<T>::CardNotOwned)?
-            // }
         }
 
-        // #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		// pub fn show_user_cards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
-        //     Ok(().into())
-        // }
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn show_user_cards(origin: OriginFor<T>) -> DispatchResultWithPostInfo {
+            todo!();
+            Ok(().into())
+        }
 
 	}
 }

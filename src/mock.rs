@@ -18,7 +18,7 @@ frame_support::construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic,
 	{
 		System: frame_system::{Module, Call, Config, Storage, Event<T>},
-	//	Balances: pallet_balances::{Module, Call, Storage, Config<T>, Event<T>},
+		Balances: pallet_balances::{Module, Call, Storage, Event<T>},
 		Cards: pallet::{Module, Call, Storage, Event<T>},
 	}
 );
@@ -47,7 +47,7 @@ impl system::Config for Test {
 	type BlockHashCount = BlockHashCount;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();//pallet_balances::AccountData<u64>;
+	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -58,17 +58,17 @@ impl pallet::Config for Test {
 	type Event = Event;
 }
 
-// impl pallet_balances::Config for Test {
-// 	type MaxLocks = ();
-// 	type Balance = u64;
-// 	type Event = Event;
-// 	type DustRemoval = ();
-// 	type ExistentialDeposit = ExistentialDeposit;
-// 	type AccountStore = System;
-// 	type WeightInfo = ();
-// 	// type MaxReserves = ();
-// 	// type ReserveIdentifier = ();
-// }
+impl pallet_balances::Config for Test {
+	type MaxLocks = ();
+	type Balance = u64;
+	type Event = Event;
+	type DustRemoval = ();
+	type ExistentialDeposit = ExistentialDeposit;
+	type AccountStore = System;
+	type WeightInfo = ();
+	// type MaxReserves = ();
+	// type ReserveIdentifier = ();
+}
 
 pub type AccountId = u64;
 pub const ALICE: AccountId = 1;
