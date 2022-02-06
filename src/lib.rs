@@ -132,6 +132,8 @@ pub mod pallet {
         CreatorWithdrawn(T::AccountId, T::AccountId),
         /// \[card_id, owner, price\]
         CardSetForSale(CardId, T::AccountId, T::Balance),
+        /// \[card_id, owner\]
+        CardRemovedFromSale(CardId, T::AccountId),
 	}
 
 	// Errors inform users that something went wrong.
@@ -216,6 +218,18 @@ pub mod pallet {
         }
 
         #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn remove_card_from_sale(origin: OriginFor<T>, card_id: CardId) 
+            ->  DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            ensure!(<CardsForSale<T>>::contains_key(card_id, &who), Error::<T>::CardNotForSale);
+
+            <CardsForSale<T>>::remove(card_id, &who);
+
+            Self::deposit_event(Event::CardRemovedFromSale(card_id, who));
+            Ok(().into())
+        }
+
+        #[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn buy(origin: OriginFor<T>, card_id: CardId, card_owner: T::AccountId)   
             ->  DispatchResultWithPostInfo {
             let who = ensure_signed(origin)?;
@@ -224,17 +238,21 @@ pub mod pallet {
                 ensure!(<CardOwners<T>>::contains_key(&card_owner, card_id), Error::<T>::CardNotOwned);
                 ensure!(<CardsForSale<T>>::contains_key(card_id, &card_owner), Error::<T>::CardNotForSale);
 
-                let price = price.take().unwrap();
+                let price = price.take().ok_or( Error::<T>::CardNotForSale)?;
                 <CardOwners<T>>::try_mutate_exists(card_owner.clone(), card_id, |amount| {
-                    pallet_balances::Call::<T>::transfer(
+                    pallet_balances::Call::<T>::transfer_keep_alive(
                         <T::Lookup as StaticLookup>::unlookup(card_owner.clone()), price);
                     match amount { 
                         Some(owner_amount) => {
-                            let new_amount = owner_amount.checked_sub(1);
-                            if let Some(a) = new_amount {
-                                *amount = Some(a);
+                            if owner_amount == &1u16 {
+                                amount.take();
                             } else {
-                                Err(Error::<T>::CardNotOwned)?
+                                let new_amount = owner_amount.checked_sub(1);
+                                if let Some(a) = new_amount {
+                                    *amount = Some(a);
+                                } else {
+                                    Err(Error::<T>::CardNotOwned)?
+                                }
                             }
 
                             match <CardOwners<T>>::try_get(&who, card_id) {
@@ -262,6 +280,7 @@ pub mod pallet {
                     Some(owner_amount) => {
                         if owner_amount == &1u16 {
                             amount.take();
+                            <CardsForSale<T>>::remove(card_id, &who);
                         } else {
                             let new_amount = owner_amount.checked_sub(1);
                             if let Some(a) = new_amount {

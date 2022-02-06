@@ -114,11 +114,10 @@ fn cannot_assign_crearor_already_creator_error() {
 fn transfer_card_ok() {
 	new_test_ext().execute_with(|| {
 		let creator = Origin::signed(ALICE);
-		let user  = 2u64;
 		let card_id = create_card_pack(creator.clone());
-		let _ = Cards::transfer(creator, card_id, user);
+		let _ = Cards::transfer(creator, card_id, BOB);
 
-		assert_eq!(Cards::owners(2, card_id), Some(1));
+		assert_eq!(Cards::owners(BOB, card_id), Some(1));
 	})
 }
 
@@ -126,13 +125,182 @@ fn transfer_card_ok() {
 fn transfer_card_not_owned_error() {
 	new_test_ext().execute_with(|| {
 		let creator1 = Origin::signed(ALICE);
-		let creator2 = Origin::signed(2);
-		let user  = 3u64;
+		let creator2 = Origin::signed(BOB);
 		let card_id = create_card_pack(creator1.clone());
-		assert_noop!(Cards::transfer(creator2, card_id, user), Error::<Test>::CardNotOwned) ;
+		assert_noop!(Cards::transfer(creator2, card_id, MIRA), Error::<Test>::CardNotOwned) ;
 
 		assert_eq!(Cards::owners(1, card_id), Some(10));
-		assert_eq!(Cards::owners(2, card_id), None);
-		assert_eq!(Cards::owners(3, card_id), None);
+		assert_eq!(Cards::owners(BOB, card_id), None);
+		assert_eq!(Cards::owners(MIRA, card_id), None);
 	})
 }
+
+#[test]
+fn set_card_price_ok(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let card_id = create_card_pack(creator.clone());
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator.clone(), card_id, 100));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(100));
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator, card_id, 55));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(55));
+	})
+}
+
+#[test]
+fn set_card_price_error(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let creator2 = Origin::signed(BOB);
+		let card_id = create_card_pack(creator.clone());
+
+		assert_noop!(Cards::set_card_for_sale_with_price(creator2, card_id, 100), Error::<Test>::CardNotOwned) ;
+	})
+}
+
+
+#[test]
+fn remove_card_price_ok(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let card_id = create_card_pack(creator.clone());
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator.clone(), card_id, 100));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(100));
+
+		assert_ok!(Cards::remove_card_from_sale(creator.clone(), card_id));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+	})
+}
+
+#[test]
+fn remove_card_price_error(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let creator2 = Origin::signed(BOB);
+		let card_id = create_card_pack(creator.clone());
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator.clone(), card_id, 100));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(100));
+
+		assert_ok!(Cards::remove_card_from_sale(creator.clone(), card_id));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+
+		assert_noop!(Cards::remove_card_from_sale(creator.clone(), card_id), Error::<Test>::CardNotForSale);
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+
+		assert_noop!(Cards::remove_card_from_sale(creator2.clone(), card_id), Error::<Test>::CardNotForSale);
+		assert_eq!(Cards::cards_for_sale(card_id, BOB), None);
+	})
+}
+
+#[test]
+fn create_and_buy_one_card_ok(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let buyer = Origin::signed(BOB);
+		let card = new_card();
+		assert_ok!(Cards::create_card_pack(creator.clone(), card.clone(), 1));
+		let card_id = Cards::previous_card_id();
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator.clone(), card_id, 100));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(100));
+
+		assert_ok!(Cards::buy(buyer.clone(), card_id, ALICE));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+		assert_eq!(Cards::owners(ALICE, card_id), None);
+		assert_eq!(Cards::owners(BOB, card_id), Some(1));
+ 
+		assert_noop!(Cards::buy(buyer.clone(), card_id, ALICE), Error::<Test>::CardNotOwned);
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+		assert_eq!(Cards::owners(ALICE, card_id), None);
+		assert_eq!(Cards::owners(BOB, card_id), Some(1));
+	})
+}
+
+#[test]
+fn buy_card_ok(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let buyer = Origin::signed(BOB);
+		let card_id = create_card_pack(creator.clone());
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator.clone(), card_id, 100));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(100));
+
+		assert_ok!(Cards::buy(buyer.clone(), card_id, ALICE));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+		assert_eq!(Cards::owners(ALICE, card_id), Some(9));
+		assert_eq!(Cards::owners(BOB, card_id), Some(1));
+
+		assert_noop!(Cards::buy(buyer.clone(), card_id, ALICE), Error::<Test>::CardNotForSale);
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+		assert_eq!(Cards::owners(ALICE, card_id), Some(9));
+		assert_eq!(Cards::owners(BOB, card_id), Some(1));
+	})
+}
+
+
+#[test]
+fn buy_card_error(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let buyer = Origin::signed(100);
+		let card_id = create_card_pack(creator.clone());
+
+		assert_noop!(Cards::buy(buyer.clone(), card_id, ALICE), Error::<Test>::CardNotForSale);
+		assert_eq!(Cards::owners(ALICE, card_id), Some(10));
+		assert_eq!(Cards::owners(BOB, card_id), None);
+	})
+}
+
+#[test]
+fn buy_card_after_transfer_ok(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let buyer = Origin::signed(BOB);
+		let buyer2 = Origin::signed(MIRA);
+		let card_id = create_card_pack(creator.clone());
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator.clone(), card_id, 199));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(199));
+
+		assert_ok!(Cards::transfer(creator, card_id, BOB));
+		assert_ok!(Cards::set_card_for_sale_with_price(buyer.clone(), card_id, 100));
+		assert_eq!(Cards::cards_for_sale(card_id, BOB), Some(100));
+
+		assert_ok!(Cards::buy(buyer2.clone(), card_id, BOB));
+		assert_eq!(Cards::cards_for_sale(card_id, BOB), None);
+
+		assert_ok!(Cards::buy(buyer2.clone(), card_id, ALICE));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), None);
+
+		assert_eq!(Cards::owners(ALICE, card_id), Some(8));
+		assert_eq!(Cards::owners(BOB, card_id), None);
+		assert_eq!(Cards::owners(MIRA, card_id), Some(2));
+	})
+}
+
+
+#[test]
+fn buy_card_after_transfer_error(){
+	new_test_ext().execute_with(|| {
+		let creator = Origin::signed(ALICE);
+		let buyer = Origin::signed(BOB);
+		let card = new_card();
+		assert_ok!(Cards::create_card_pack(creator.clone(), card.clone(), 1));
+		let card_id = Cards::previous_card_id();
+
+		assert_ok!(Cards::set_card_for_sale_with_price(creator.clone(), card_id, 100));
+		assert_eq!(Cards::cards_for_sale(card_id, ALICE), Some(100));
+
+		assert_ok!(Cards::transfer(creator, card_id, BOB));
+
+		assert_noop!(Cards::buy(buyer.clone(), card_id, ALICE), Error::<Test>::CardNotOwned);
+	})
+}
+
+
+
